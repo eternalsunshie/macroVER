@@ -1,4 +1,4 @@
--- CTD Hotkey Macro System (Guaranteed Input Capture)
+-- Fixed Cameraman TD Hotkey Macro (Captures UI & Mobile Touch Events)
 local DrawingLib = Drawing or (getgenv and getgenv().Drawing)
 if not DrawingLib then return end
 
@@ -11,10 +11,10 @@ local IsRecording = false
 local IsPlaying = false
 local StartTime = 0
 
--- On-Screen Status HUD (Drawing Library)
+-- On-Screen Status HUD
 local StatusBox = DrawingLib.new("Square")
 StatusBox.Visible = true
-StatusBox.Size = Vector2.new(240, 90)
+StatusBox.Size = Vector2.new(240, 95)
 StatusBox.Position = Vector2.new(40, 140)
 StatusBox.Color = Color3.fromRGB(20, 20, 20)
 StatusBox.Filled = true
@@ -29,8 +29,8 @@ Title.Color = Color3.fromRGB(0, 170, 255)
 
 local InfoText1 = DrawingLib.new("Text")
 InfoText1.Visible = true
-InfoText1.Text = "[F1] Toggle Record | [F2] Play"
-InfoText1.Position = Vector2.new(50, 180)
+InfoText1.Text = "[F1] Record | [F2] Play | [F3] Slot"
+InfoText1.Position = Vector2.new(50, 175)
 InfoText1.Size = 13
 InfoText1.Color = Color3.fromRGB(255, 255, 255)
 
@@ -41,7 +41,7 @@ StatusText.Position = Vector2.new(50, 205)
 StatusText.Size = 13
 StatusText.Color = Color3.fromRGB(200, 200, 200)
 
--- File Save / Load Helpers
+-- File Storage Helpers
 local function saveMacro()
     if not writefile then return end
     pcall(function()
@@ -61,31 +61,29 @@ local function loadMacro()
             StatusText.Text = "Loaded Slot " .. SelectedSlot .. " (" .. #MacroData .. " actions)"
         end
     else
-        StatusText.Text = "Slot " .. SelectedSlot << " is empty"
+        StatusText.Text = "Slot " .. SelectedSlot .. " is empty"
     end
 end
 
--- Hotkey Controls & Input Logger
+-- Hotkey Controls & Unified Input Recorder
 UserInputService.InputBegan:Connect(function(input, processed)
-    -- Handle Macro Hotkeys
+    -- 1. Check Macro Hotkeys (F1, F2, F3)
     if input.UserInputType == Enum.UserInputType.Keyboard then
         if input.KeyCode == Enum.KeyCode.F1 then
-            -- F1: Toggle Record
             if IsPlaying then return end
             IsRecording = not IsRecording
             if IsRecording then
                 MacroData = {}
                 StartTime = tick()
-                StatusText.Text = "RECORDING to Slot " .. SelectedSlot
+                StatusText.Text = "RECORDING (Slot " .. SelectedSlot .. ")..."
                 StatusText.Color = Color3.fromRGB(0, 255, 0)
             else
-                StatusText.Text = "Recorded " .. #MacroData .. " actions. Saved!"
+                StatusText.Text = "Saved " .. #MacroData .. " actions!"
                 StatusText.Color = Color3.fromRGB(255, 255, 255)
                 saveMacro()
             end
             return
         elseif input.KeyCode == Enum.KeyCode.F2 then
-            -- F2: Playback Macro
             if IsRecording or IsPlaying then return end
             loadMacro()
             if #MacroData == 0 then
@@ -119,7 +117,6 @@ UserInputService.InputBegan:Connect(function(input, processed)
             end)
             return
         elseif input.KeyCode == Enum.KeyCode.F3 then
-            -- F3: Switch Slots (1 -> 2 -> 3 -> 1)
             if IsRecording or IsPlaying then return end
             SelectedSlot = SelectedSlot + 1
             if SelectedSlot > 3 then SelectedSlot = 1 end
@@ -129,7 +126,7 @@ UserInputService.InputBegan:Connect(function(input, processed)
         end
     end
 
-    -- Capture Game Actions while Recording
+    -- 2. Log Placement & Keyboard Actions (Bypasses UI processed check)
     if not IsRecording then return end
     local timeOffset = tick() - StartTime
 
